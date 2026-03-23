@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 220">
+  <!-- Background -->
+  <circle cx="110" cy="110" r="100" fill="#1f4b99"/>
+
+  <!-- Inner circle -->
+  <circle cx="110" cy="110" r="82" fill="#ffffff"/>
+
+  <!-- Books -->
+  <rect x="58" y="65" width="20" height="90" rx="4" fill="#1f4b99"/>
+  <rect x="82" y="55" width="22" height="100" rx="4" fill="#2d6cdf"/>
+  <rect x="108" y="70" width="22" height="85" rx="4" fill="#4f8cff"/>
+  <rect x="134" y="60" width="24" height="95" rx="4" fill="#16376f"/>
+
+  <!-- Base line -->
+  <path d="M60 160 Q110 130 160 160" fill="none" stroke="#f0b429" stroke-width="10" stroke-linecap="round"/>
+</svg>

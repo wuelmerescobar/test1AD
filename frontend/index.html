@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Library Management System - Admin</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="admin-layout">
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <img src="logo.svg" class="logo" alt="Library Logo" />
+        <div>
+          <h2>LMS Admin</h2>
+          <p>Management Panel</p>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <a href="#branch-management">Branch Management</a>
+        <a href="#book-management">Book Management</a>
+        <a href="#member-management">Member Management</a>
+        <a href="#reports-management">Reports & Availability</a>
+      </nav>
+    </aside>
+
+    <main class="main-content">
+      <header class="topbar">
+        <div>
+          <h1>Library Management System</h1>
+          <p class="subtitle">Admin dashboard for branches, books, and members</p>
+        </div>
+      </header>
+
+      <section class="card" id="branch-management">
+        <h2>Branch Management</h2>
+        <button id="loadBranchesBtn">Load Branches</button>
+        <div id="branchesList" class="button-list"></div>
+        <pre id="branchesOutput"></pre>
+      </section>
+
+      <section class="card" id="book-management">
+        <h2>Book Management</h2>
+
+        <div class="quick-controls">
+          <button id="toggleAddBookBtn">Show/Hide Add Book</button>
+          <button id="toggleEditBookBtn">Show/Hide Edit Book</button>
+          <button id="toggleDeleteBookBtn">Show/Hide Delete Book</button>
+        </div>
+
+        <div class="panel-header">
+          <h3>Books Library</h3>
+          <div class="panel-actions">
+            <label for="bookPageSize">Books to display:</label>
+            <select id="bookPageSize">
+              <option value="3">3</option>
+              <option value="5" selected>5</option>
+              <option value="10">10</option>
+            </select>
+
+            <label for="bookPageNumber">Page:</label>
+            <select id="bookPageNumber">
+              <option value="1">1</option>
+            </select>
+
+            <button id="loadBooksBtn">Load Books</button>
+          </div>
+        </div>
+
+        <div id="booksList" class="button-list"></div>
+        <pre id="booksOutput"></pre>
+      </section>
+
+      <section class="card hidden-section" id="addBookSection">
+        <h3>Add Book</h3>
+        <form id="addBookForm">
+          <input type="text" id="bookTitle" placeholder="Title" required />
+          <input type="text" id="bookAuthor" placeholder="Author" required />
+          <input type="text" id="bookISBN" placeholder="ISBN" />
+          <input type="text" id="bookGenre" placeholder="Genre" />
+          <select id="bookBranchId" required>
+            <option value="">-- Select branch --</option>
+          </select>
+          <button type="submit">Add Book</button>
+        </form>
+        <pre id="addBookOutput"></pre>
+      </section>
+
+      <section class="card hidden-section" id="editBookSection">
+        <h3>Edit Book</h3>
+        <form id="editBookForm">
+          <input type="number" id="editBookId" placeholder="Book ID" required />
+          <input type="text" id="editBookTitle" placeholder="Title" required />
+          <input type="text" id="editBookAuthor" placeholder="Author" required />
+          <input type="text" id="editBookISBN" placeholder="ISBN" />
+          <input type="text" id="editBookGenre" placeholder="Genre" />
+          <button type="submit">Update Book</button>
+        </form>
+        <pre id="editBookOutput"></pre>
+      </section>
+
+      <section class="card hidden-section" id="deleteBookSection">
+        <h3>Delete Book</h3>
+        <form id="deleteBookForm">
+          <input type="number" id="deleteBookId" placeholder="Book ID" required />
+          <button type="submit">Delete Book</button>
+        </form>
+        <pre id="deleteBookOutput"></pre>
+      </section>
+
+      <section class="card" id="member-management">
+        <h2>Member Management</h2>
+
+        <div class="quick-controls">
+          <button id="toggleAddMemberBtn">Show/Hide Add Member</button>
+          <button id="toggleDeleteMemberBtn">Show/Hide Delete Member</button>
+        </div>
+      </section>
+
+      <section class="card hidden-section" id="addMemberSection">
+        <h3>Add Member</h3>
+        <form id="addMemberForm">
+          <input type="text" id="memberFirstName" placeholder="First Name" required />
+          <input type="text" id="memberLastName" placeholder="Last Name" required />
+          <input type="email" id="memberEmail" placeholder="Email" />
+          <input type="text" id="memberPhone" placeholder="Phone" />
+          <select id="memberBranchId">
+            <option value="">-- Select branch --</option>
+          </select>
+          <button type="submit">Add Member</button>
+        </form>
+        <pre id="addMemberOutput"></pre>
+      </section>
+
+      <section class="card hidden-section" id="deleteMemberSection">
+        <h3>Delete Member</h3>
+        <form id="deleteMemberForm">
+          <input type="number" id="deleteMemberId" placeholder="Member ID" required />
+          <button type="submit">Delete Member</button>
+        </form>
+        <pre id="deleteMemberOutput"></pre>
+      </section>
+
+      <section class="card" id="reports-management">
+        <h2>Reports & Availability</h2>
+
+        <div class="report-grid">
+          <div class="report-box">
+            <h3>Available Books by Branch</h3>
+            <label for="branchSelect">Choose a branch:</label>
+            <select id="branchSelect">
+              <option value="">-- Select a branch --</option>
+            </select>
+            <button id="loadBranchBooksBtn">Load Available Books</button>
+            <pre id="branchBooksOutput"></pre>
+          </div>
+
+          <div class="report-box">
+            <h3>Members by Branch</h3>
+            <label for="memberBranchSelect">Choose a branch:</label>
+            <select id="memberBranchSelect">
+              <option value="">-- Select a branch --</option>
+            </select>
+            <button id="loadBranchMembersBtn">Load Members</button>
+            <pre id="branchMembersOutput"></pre>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
