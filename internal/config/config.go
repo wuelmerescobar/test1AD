@@ -18,6 +18,12 @@ type Config struct {
 	ShutdownTimeout time.Duration
 	AllowedOrigins  []string
 	AppEnv          string
+	JWTSecret       string
+	SMTPHost        string
+	SMTPPort        string
+	SMTPUser        string
+	SMTPPass        string
+	MailFrom        string
 }
 
 func Load() (*Config, error) {
@@ -51,6 +57,12 @@ func Load() (*Config, error) {
 		ShutdownTimeout: shutdownTimeout,
 		AllowedOrigins:  allowedOrigins,
 		AppEnv:          getEnv("APP_ENV", "development"),
+		JWTSecret:       getEnv("JWT_SECRET", "change-me-in-production"),
+		SMTPHost:        getEnv("SMTP_HOST", ""),
+		SMTPPort:        getEnv("SMTP_PORT", ""),
+		SMTPUser:        getEnv("SMTP_USER", ""),
+		SMTPPass:        getEnv("SMTP_PASS", ""),
+		MailFrom:        getEnv("MAIL_FROM", ""),
 	}
 
 	if cfg.DBDSN == "" {

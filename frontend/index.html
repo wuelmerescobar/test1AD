@@ -23,24 +23,58 @@
         <a href="#member-management">Member Management</a>
         <a href="#reports-management">Reports & Availability</a>
       </nav>
+
+      <div class="current-user-box">
+        <h3>Current User</h3>
+        <p id="currentUserText">Not logged in</p>
+        <button id="logoutBtn" class="danger-btn">Logout</button>
+      </div>
     </aside>
 
     <main class="main-content">
       <header class="topbar">
         <div>
           <h1>Library Management System</h1>
-          <p class="subtitle">Admin dashboard for branches, books, and members</p>
+          <p class="subtitle">Admin dashboard for branches, books, members, and staff</p>
         </div>
       </header>
 
-      <section class="card" id="branch-management">
-        <h2>Branch Management</h2>
-        <button id="loadBranchesBtn">Load Branches</button>
-        <div id="branchesList" class="button-list"></div>
-        <pre id="branchesOutput"></pre>
+      <section class="card">
+        <h2>Register Staff</h2>
+        <form id="registerStaffForm">
+          <input type="email" id="staffEmail" placeholder="Email" required />
+          <input type="password" id="staffPassword" placeholder="Password" required />
+          <select id="staffRole" required>
+            <option value="viewer">Viewer</option>
+            <option value="librarian">Librarian</option>
+            <option value="admin">Admin</option>
+          </select>
+          <input type="text" id="staffFirstName" placeholder="First Name" required />
+          <input type="text" id="staffLastName" placeholder="Last Name" required />
+          <input type="text" id="staffPosition" placeholder="Position" />
+          <select id="staffBranchId">
+            <option value="">-- Select branch --</option>
+          </select>
+          <button type="submit">Register Staff</button>
+        </form>
+        <div id="registerStaffOutput" class="message-box"></div>
       </section>
 
-      <section class="card" id="book-management">
+      <section class="card" id="branch-management">
+        <div class="section-header">
+          <h2>Branch Management</h2>
+          <button id="loadBranchesBtn">Refresh Branches</button>
+        </div>
+
+        <div id="branchesGrid" class="card-grid"></div>
+
+        <div class="detail-panel">
+          <h3>Branch Details</h3>
+          <div id="branchDetailContent" class="empty-state">Select a branch card to view details.</div>
+        </div>
+      </section>
+
+      <section class="card admin-only" id="book-management">
         <h2>Book Management</h2>
 
         <div class="quick-controls">
@@ -64,15 +98,32 @@
               <option value="1">1</option>
             </select>
 
-            <button id="loadBooksBtn">Load Books</button>
+            <button id="loadBooksBtn">Refresh Books</button>
           </div>
         </div>
 
-        <div id="booksList" class="button-list"></div>
-        <pre id="booksOutput"></pre>
+        <div class="table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Title</th>
+                <th>Author</th>
+                <th>ISBN</th>
+                <th>Genre</th>
+              </tr>
+            </thead>
+            <tbody id="booksTableBody"></tbody>
+          </table>
+        </div>
+
+        <div class="detail-panel">
+          <h3>Book Details</h3>
+          <div id="bookDetailContent" class="empty-state">Click a book row to view details.</div>
+        </div>
       </section>
 
-      <section class="card hidden-section" id="addBookSection">
+      <section class="card hidden-section admin-only" id="addBookSection">
         <h3>Add Book</h3>
         <form id="addBookForm">
           <input type="text" id="bookTitle" placeholder="Title" required />
@@ -84,10 +135,10 @@
           </select>
           <button type="submit">Add Book</button>
         </form>
-        <pre id="addBookOutput"></pre>
+        <div id="addBookOutput" class="message-box"></div>
       </section>
 
-      <section class="card hidden-section" id="editBookSection">
+      <section class="card hidden-section admin-only" id="editBookSection">
         <h3>Edit Book</h3>
         <form id="editBookForm">
           <input type="number" id="editBookId" placeholder="Book ID" required />
@@ -97,28 +148,28 @@
           <input type="text" id="editBookGenre" placeholder="Genre" />
           <button type="submit">Update Book</button>
         </form>
-        <pre id="editBookOutput"></pre>
+        <div id="editBookOutput" class="message-box"></div>
       </section>
 
-      <section class="card hidden-section" id="deleteBookSection">
+      <section class="card hidden-section admin-only" id="deleteBookSection">
         <h3>Delete Book</h3>
         <form id="deleteBookForm">
           <input type="number" id="deleteBookId" placeholder="Book ID" required />
           <button type="submit">Delete Book</button>
         </form>
-        <pre id="deleteBookOutput"></pre>
+        <div id="deleteBookOutput" class="message-box"></div>
       </section>
 
       <section class="card" id="member-management">
         <h2>Member Management</h2>
 
-        <div class="quick-controls">
+        <div class="quick-controls admin-only">
           <button id="toggleAddMemberBtn">Show/Hide Add Member</button>
           <button id="toggleDeleteMemberBtn">Show/Hide Delete Member</button>
         </div>
       </section>
 
-      <section class="card hidden-section" id="addMemberSection">
+      <section class="card hidden-section admin-only" id="addMemberSection">
         <h3>Add Member</h3>
         <form id="addMemberForm">
           <input type="text" id="memberFirstName" placeholder="First Name" required />
@@ -130,16 +181,16 @@
           </select>
           <button type="submit">Add Member</button>
         </form>
-        <pre id="addMemberOutput"></pre>
+        <div id="addMemberOutput" class="message-box"></div>
       </section>
 
-      <section class="card hidden-section" id="deleteMemberSection">
+      <section class="card hidden-section admin-only" id="deleteMemberSection">
         <h3>Delete Member</h3>
         <form id="deleteMemberForm">
           <input type="number" id="deleteMemberId" placeholder="Member ID" required />
           <button type="submit">Delete Member</button>
         </form>
-        <pre id="deleteMemberOutput"></pre>
+        <div id="deleteMemberOutput" class="message-box"></div>
       </section>
 
       <section class="card" id="reports-management">
@@ -153,7 +204,20 @@
               <option value="">-- Select a branch --</option>
             </select>
             <button id="loadBranchBooksBtn">Load Available Books</button>
-            <pre id="branchBooksOutput"></pre>
+
+            <div class="table-wrapper">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Title</th>
+                    <th>Author</th>
+                    <th>Genre</th>
+                  </tr>
+                </thead>
+                <tbody id="branchBooksTableBody"></tbody>
+              </table>
+            </div>
           </div>
 
           <div class="report-box">
@@ -163,7 +227,43 @@
               <option value="">-- Select a branch --</option>
             </select>
             <button id="loadBranchMembersBtn">Load Members</button>
-            <pre id="branchMembersOutput"></pre>
+
+            <div class="table-wrapper">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                  </tr>
+                </thead>
+                <tbody id="branchMembersTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="report-box">
+            <h3>Staff Members by Branch</h3>
+            <label for="staffBranchSelect">Choose a branch:</label>
+            <select id="staffBranchSelect">
+              <option value="">-- Select a branch --</option>
+            </select>
+            <button id="loadBranchStaffBtn">Load Staff Members</button>
+
+            <div class="table-wrapper">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Position</th>
+                    <th>Account ID</th>
+                  </tr>
+                </thead>
+                <tbody id="branchStaffTableBody"></tbody>
+              </table>
+            </div>
           </div>
         </div>
       </section>

@@ -7,6 +7,7 @@ import (
 
 	"test1/internal/config"
 	"test1/internal/handler"
+	"test1/internal/mailer"
 	"test1/internal/middleware"
 	"test1/internal/repository"
 	"test1/internal/service"
@@ -36,8 +37,21 @@ func NewRouter(db *sql.DB, cfg *config.Config, logger *slog.Logger) http.Handler
 	memberService := service.NewMemberService(memberRepo)
 	memberHandler := handler.NewMemberHandler(memberService)
 
+	accountRepo := repository.NewAccountRepository(db)
+	staffRepo := repository.NewStaffUserRepository(db)
+	staffUserService := service.NewStaffUserService(staffRepo)
+	staffUserHandler := handler.NewStaffUserHandler(staffUserService)
+
+	appMailer := mailer.New(cfg.SMTPHost, cfg.SMTPPort, cfg.SMTPUser, cfg.SMTPPass, cfg.MailFrom)
+	authService := service.NewAuthService(accountRepo, staffRepo, appMailer, cfg.JWTSecret)
+	authHandler := handler.NewAuthHandler(authService)
+
 	mux.HandleFunc("/health", healthHandler.Health)
 	mux.HandleFunc("/metrics", metricsHandler.Metrics)
+
+	mux.HandleFunc("/auth/register-staff", authHandler.RegisterStaff)
+	mux.HandleFunc("/auth/login", authHandler.Login)
+	mux.Handle("/auth/me", middleware.Auth(cfg.JWTSecret)(http.HandlerFunc(authHandler.Me)))
 
 	mux.HandleFunc("/branches", branchHandler.HandleBranches)
 	mux.HandleFunc("/branches/", func(w http.ResponseWriter, r *http.Request) {
@@ -49,15 +63,31 @@ func NewRouter(db *sql.DB, cfg *config.Config, logger *slog.Logger) http.Handler
 			memberHandler.GetMembersByBranch(w, r)
 			return
 		}
+		if len(r.URL.Path) >= 6 && r.URL.Path[len(r.URL.Path)-6:] == "/staff" {
+			staffUserHandler.GetStaffByBranch(w, r)
+			return
+		}
 		http.NotFound(w, r)
 	})
 
 	mux.HandleFunc("/books", bookHandler.HandleBooks)
-	mux.HandleFunc("/books/", bookHandler.HandleBookByID)
-	mux.HandleFunc("/book-copies", bookCopyHandler.HandleBookCopies)
+
+	protectedBooksByID := middleware.Auth(cfg.JWTSecret)(
+		middleware.RequireRole("admin", "librarian")(http.HandlerFunc(bookHandler.HandleBookByID)),
+	)
+	mux.Handle("/books/", protectedBooksByID)
+
+	protectedCopies := middleware.Auth(cfg.JWTSecret)(
+		middleware.RequireRole("admin", "librarian")(http.HandlerFunc(bookCopyHandler.HandleBookCopies)),
+	)
+	mux.Handle("/book-copies", protectedCopies)
 
 	mux.HandleFunc("/members", memberHandler.HandleMembers)
-	mux.HandleFunc("/members/", memberHandler.HandleMemberByID)
+
+	protectedMembersByID := middleware.Auth(cfg.JWTSecret)(
+		middleware.RequireRole("admin")(http.HandlerFunc(memberHandler.HandleMemberByID)),
+	)
+	mux.Handle("/members/", protectedMembersByID)
 
 	var handlerChain http.Handler = mux
 	handlerChain = middleware.RateLimit(cfg.RateLimitRPS, cfg.RateLimitBurst)(handlerChain)
