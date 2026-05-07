@@ -32,3 +32,42 @@ func (r *BookCopyRepository) Create(ctx context.Context, req models.CreateBookCo
 
 	return &bc, nil
 }
+
+func (r *BookCopyRepository) GetByBook(ctx context.Context, bookID int) ([]models.BookCopyDetail, error) {
+	query := `
+		SELECT bc.id, bc.book_id, bc.branch_id, br.name, br.code, bc.status, bc.created_at
+		FROM book_copies bc
+		JOIN branches br ON br.id = bc.branch_id
+		WHERE bc.book_id = $1
+		ORDER BY br.name ASC, bc.id ASC
+	`
+
+	rows, err := r.DB.QueryContext(ctx, query, bookID)
+	if err != nil {
+		return nil, fmt.Errorf("query copies by book: %w", err)
+	}
+	defer rows.Close()
+
+	var copies []models.BookCopyDetail
+	for rows.Next() {
+		var copy models.BookCopyDetail
+		if err := rows.Scan(
+			&copy.ID,
+			&copy.BookID,
+			&copy.BranchID,
+			&copy.BranchName,
+			&copy.BranchCode,
+			&copy.Status,
+			&copy.CreatedAt,
+		); err != nil {
+			return nil, fmt.Errorf("scan copy by book: %w", err)
+		}
+		copies = append(copies, copy)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate copies by book: %w", err)
+	}
+
+	return copies, nil
+}

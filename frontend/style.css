@@ -264,6 +264,29 @@ form {
   color: var(--text-muted);
 }
 
+.copy-summary {
+  display: grid;
+  gap: 10px;
+}
+
+.copy-summary p {
+  margin: 0;
+}
+
+.copy-location {
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #f9fafb;
+}
+
+.copy-location span,
+.copy-location small {
+  color: var(--text-muted);
+}
+
 .table-wrapper {
   overflow-x: auto;
   margin-top: 12px;

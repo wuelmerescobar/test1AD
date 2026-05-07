@@ -83,7 +83,13 @@ func NewRouter(db *sql.DB, cfg *config.Config, logger *slog.Logger) http.Handler
 	protectedBooksByID := middleware.Auth(cfg.JWTSecret)(
 		middleware.RequireRole("admin", "librarian")(http.HandlerFunc(bookHandler.HandleBookByID)),
 	)
-	mux.Handle("/books/", protectedBooksByID)
+	mux.HandleFunc("/books/", func(w http.ResponseWriter, r *http.Request) {
+		if len(r.URL.Path) >= 7 && r.URL.Path[len(r.URL.Path)-7:] == "/copies" {
+			bookCopyHandler.GetCopiesByBook(w, r)
+			return
+		}
+		protectedBooksByID.ServeHTTP(w, r)
+	})
 
 	protectedCopies := middleware.Auth(cfg.JWTSecret)(
 		middleware.RequireRole("admin", "librarian")(http.HandlerFunc(bookCopyHandler.HandleBookCopies)),

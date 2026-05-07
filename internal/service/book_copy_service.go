@@ -33,3 +33,11 @@ func (s *BookCopyService) Create(ctx context.Context, req models.CreateBookCopyR
 
 	return s.Repo.Create(ctx, req)
 }
+
+func (s *BookCopyService) GetByBook(ctx context.Context, bookID int) ([]models.BookCopyDetail, error) {
+	if bookID <= 0 {
+		return nil, fmt.Errorf("invalid book id")
+	}
+
+	return s.Repo.GetByBook(ctx, bookID)
+}

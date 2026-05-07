@@ -66,7 +66,9 @@ const logoutBtn = document.getElementById("logoutBtn");
 
 const bookPageSize = document.getElementById("bookPageSize");
 const bookPageNumber = document.getElementById("bookPageNumber");
+const bookSearchInput = document.getElementById("bookSearchInput");
 
+let allBooksCache = [];
 let allBranchesCache = [];
 
 // Observer Pattern: this store is the subject, and UI renderers subscribe to its changes.
@@ -237,7 +239,51 @@ function renderBranchDetail(branch) {
   `;
 }
 
-function renderBookDetail(book) {
+function renderBookCopySummary(copies) {
+  if (!copies.length) {
+    return `<div class="empty-state">No copies found for this book.</div>`;
+  }
+
+  const copiesByBranch = copies.reduce((summary, copy) => {
+    const key = `${copy.branch_id}-${copy.branch_name}`;
+    if (!summary[key]) {
+      summary[key] = {
+        branchName: copy.branch_name,
+        branchCode: copy.branch_code,
+        total: 0,
+        available: 0,
+        copies: [],
+      };
+    }
+
+    summary[key].total += 1;
+    if (copy.status === "available") {
+      summary[key].available += 1;
+    }
+    summary[key].copies.push(copy);
+
+    return summary;
+  }, {});
+
+  return `
+    <div class="copy-summary">
+      <p><strong>Total copies:</strong> ${copies.length}</p>
+      ${Object.values(copiesByBranch)
+        .map(
+          (branch) => `
+            <div class="copy-location">
+              <strong>${branch.branchName} (${branch.branchCode})</strong>
+              <span>${branch.total} total, ${branch.available} available</span>
+              <small>Copy IDs: ${branch.copies.map((copy) => `${copy.id} - ${copy.status}`).join(", ")}</small>
+            </div>
+          `
+        )
+        .join("")}
+    </div>
+  `;
+}
+
+async function renderBookDetail(book) {
   bookDetailContent.innerHTML = `
     <div class="detail-grid">
       <div class="detail-item"><strong>ID</strong>${book.id}</div>
@@ -247,7 +293,22 @@ function renderBookDetail(book) {
       <div class="detail-item"><strong>Genre</strong>${book.genre || "-"}</div>
       <div class="detail-item"><strong>Created</strong>${new Date(book.created_at).toLocaleString()}</div>
     </div>
+    <div class="detail-panel">
+      <h3>Copies & Locations</h3>
+      <div id="bookCopyDetailContent" class="empty-state">Loading copies...</div>
+    </div>
   `;
+
+  const copyDetailContent = document.getElementById("bookCopyDetailContent");
+
+  try {
+    const copies = await fetchJSON(`${API_BASE}/books/${book.id}/copies`);
+    copyDetailContent.className = "";
+    copyDetailContent.innerHTML = renderBookCopySummary(copies);
+  } catch (error) {
+    copyDetailContent.className = "empty-state";
+    copyDetailContent.textContent = error.message;
+  }
 }
 
 function renderBranches(branches) {
@@ -292,6 +353,27 @@ function renderBooksTable() {
     tr.addEventListener("click", () => renderBookDetail(book));
     booksTableBody.appendChild(tr);
   });
+}
+
+function normalizeSearchText(value) {
+  return String(value || "").trim().toLowerCase();
+}
+
+function applyBookSearchFilter() {
+  const searchTerm = normalizeSearchText(bookSearchInput.value);
+
+  if (!searchTerm) {
+    bookPaginationStore.setBooks(allBooksCache);
+    return;
+  }
+
+  const filteredBooks = allBooksCache.filter((book) => {
+    const author = normalizeSearchText(book.author);
+    const isbn = normalizeSearchText(book.isbn);
+    return author.includes(searchTerm) || isbn.includes(searchTerm);
+  });
+
+  bookPaginationStore.setBooks(filteredBooks);
 }
 
 function renderSimpleTableRows(tbody, rows, columns, emptyMessage) {
@@ -345,7 +427,8 @@ async function loadBranches() {
 async function loadBooks() {
   try {
     const books = await fetchJSON(`${API_BASE}/books`);
-    bookPaginationStore.setBooks(books);
+    allBooksCache = books;
+    applyBookSearchFilter();
   } catch (error) {
     booksTableBody.innerHTML = `<tr><td colspan="5">${error.message}</td></tr>`;
   }
@@ -676,6 +759,8 @@ bookPageSize.addEventListener("change", () => {
 bookPageNumber.addEventListener("change", () => {
   bookPaginationStore.setPage(bookPageNumber.value);
 });
+
+bookSearchInput.addEventListener("input", applyBookSearchFilter);
 
 bookPaginationStore.subscribe(rebuildBookPageNumbers);
 bookPaginationStore.subscribe(renderBooksTable);
