@@ -14,6 +14,8 @@ const loadBooksBtn = document.getElementById("loadBooksBtn");
 const loadBranchBooksBtn = document.getElementById("loadBranchBooksBtn");
 const loadBranchMembersBtn = document.getElementById("loadBranchMembersBtn");
 const loadBranchStaffBtn = document.getElementById("loadBranchStaffBtn");
+const loadLoansBtn = document.getElementById("loadLoansBtn");
+const loadFinesBtn = document.getElementById("loadFinesBtn");
 
 const toggleAddBookBtn = document.getElementById("toggleAddBookBtn");
 const toggleEditBookBtn = document.getElementById("toggleEditBookBtn");
@@ -32,6 +34,8 @@ const booksTableBody = document.getElementById("booksTableBody");
 const branchBooksTableBody = document.getElementById("branchBooksTableBody");
 const branchMembersTableBody = document.getElementById("branchMembersTableBody");
 const branchStaffTableBody = document.getElementById("branchStaffTableBody");
+const loansTableBody = document.getElementById("loansTableBody");
+const finesTableBody = document.getElementById("finesTableBody");
 
 const branchDetailContent = document.getElementById("branchDetailContent");
 const bookDetailContent = document.getElementById("bookDetailContent");
@@ -63,8 +67,66 @@ const logoutBtn = document.getElementById("logoutBtn");
 const bookPageSize = document.getElementById("bookPageSize");
 const bookPageNumber = document.getElementById("bookPageNumber");
 
-let allBooksCache = [];
 let allBranchesCache = [];
+
+// Observer Pattern: this store is the subject, and UI renderers subscribe to its changes.
+function createBookPaginationStore() {
+  const subscribers = new Set();
+  const state = {
+    books: [],
+    page: 1,
+    pageSize: Math.min(Number(bookPageSize.value), 10),
+  };
+
+  function getTotalPages() {
+    return Math.max(1, Math.ceil(state.books.length / state.pageSize));
+  }
+
+  function notify() {
+    const snapshot = {
+      books: state.books,
+      page: state.page,
+      pageSize: state.pageSize,
+      totalPages: getTotalPages(),
+    };
+
+    subscribers.forEach((subscriber) => subscriber(snapshot));
+  }
+
+  return {
+    subscribe(subscriber) {
+      subscribers.add(subscriber);
+      subscriber({
+        books: state.books,
+        page: state.page,
+        pageSize: state.pageSize,
+        totalPages: getTotalPages(),
+      });
+
+      return () => subscribers.delete(subscriber);
+    },
+    setBooks(books) {
+      state.books = books;
+      state.page = 1;
+      notify();
+    },
+    setPageSize(pageSize) {
+      state.pageSize = Math.min(Number(pageSize), 10);
+      state.page = 1;
+      notify();
+    },
+    setPage(page) {
+      state.page = Math.min(Number(page), getTotalPages());
+      notify();
+    },
+    getPagedBooks() {
+      const start = (state.page - 1) * state.pageSize;
+      return state.books.slice(start, start + state.pageSize);
+    },
+  };
+}
+
+const bookPaginationStore = createBookPaginationStore();
 
 function getToken() {
   return localStorage.getItem("lms-token") || "";
@@ -152,15 +214,13 @@ function updateAuthUI() {
   }
 }
 
-function rebuildBookPageNumbers(totalBooks) {
-  const pageSize = Math.min(Number(bookPageSize.value), 10);
-  const totalPages = Math.max(1, Math.ceil(totalBooks / pageSize));
-
+function rebuildBookPageNumbers({ page, totalPages }) {
   bookPageNumber.innerHTML = "";
   for (let i = 1; i <= totalPages; i++) {
     const option = document.createElement("option");
     option.value = i;
     option.textContent = i;
+    option.selected = i === page;
     bookPageNumber.appendChild(option);
   }
 }
@@ -212,13 +272,7 @@ function renderBranches(branches) {
 }
 
 function renderBooksTable() {
-  const pageSize = Math.min(Number(bookPageSize.value), 10);
-  const page = Number(bookPageNumber.value);
-
-  const start = (page - 1) * pageSize;
-  const end = start + pageSize;
-  const pagedBooks = allBooksCache.slice(start, end);
-
+  const pagedBooks = bookPaginationStore.getPagedBooks();
   booksTableBody.innerHTML = "";
 
   if (!pagedBooks.length) {
@@ -255,6 +309,15 @@ function renderSimpleTableRows(tbody, rows, columns, emptyMessage) {
   });
 }
 
+function personTypeBadge(type) {
+  const className = type === "Staff" ? "type-badge staff" : "type-badge member";
+  return `<span class="${className}">${type}</span>`;
+}
+
+function formatDate(value) {
+  return value ? new Date(value).toLocaleDateString() : "-";
+}
+
 async function loadBranches() {
   try {
     const branches = await fetchJSON(`${API_BASE}/branches`);
@@ -282,9 +345,7 @@ async function loadBranches() {
 async function loadBooks() {
   try {
     const books = await fetchJSON(`${API_BASE}/books`);
-    allBooksCache = books;
-    rebuildBookPageNumbers(allBooksCache.length);
-    renderBooksTable();
+    bookPaginationStore.setBooks(books);
   } catch (error) {
     booksTableBody.innerHTML = `<tr><td colspan="5">${error.message}</td></tr>`;
   }
@@ -320,7 +381,7 @@ async function loadMembersByBranch() {
   const branchId = memberBranchSelect.value;
 
   if (!branchId) {
-    branchMembersTableBody.innerHTML = `<tr><td colspan="4">Please select a branch first.</td></tr>`;
+    branchMembersTableBody.innerHTML = `<tr><td colspan="5">Please select a branch first.</td></tr>`;
     return;
   }
 
@@ -332,13 +393,14 @@ async function loadMembersByBranch() {
       [
         (m) => m.id,
         (m) => `${m.first_name} ${m.last_name}`,
+        () => personTypeBadge("Regular Member"),
         (m) => m.email || "-",
         (m) => m.phone || "-",
       ],
       "No members found for this branch."
     );
   } catch (error) {
-    branchMembersTableBody.innerHTML = `<tr><td colspan="4">${error.message}</td></tr>`;
+    branchMembersTableBody.innerHTML = `<tr><td colspan="5">${error.message}</td></tr>`;
   }
 }
 
@@ -346,7 +408,7 @@ async function loadStaffByBranch() {
   const branchId = staffBranchSelect.value;
 
   if (!branchId) {
-    branchStaffTableBody.innerHTML = `<tr><td colspan="4">Please select a branch first.</td></tr>`;
+    branchStaffTableBody.innerHTML = `<tr><td colspan="6">Please select a branch first.</td></tr>`;
     return;
   }
 
@@ -358,13 +420,60 @@ async function loadStaffByBranch() {
       [
         (s) => s.id,
         (s) => `${s.first_name} ${s.last_name}`,
+        () => personTypeBadge("Staff"),
+        (s) => s.role || "-",
         (s) => s.position || "-",
         (s) => s.account_id,
       ],
       "No staff found for this branch."
     );
   } catch (error) {
-    branchStaffTableBody.innerHTML = `<tr><td colspan="4">${error.message}</td></tr>`;
+    branchStaffTableBody.innerHTML = `<tr><td colspan="6">${error.message}</td></tr>`;
+  }
+}
+
+async function loadLoans() {
+  try {
+    const loans = await fetchJSON(`${API_BASE}/loans`);
+    renderSimpleTableRows(
+      loansTableBody,
+      loans,
+      [
+        (loan) => loan.id,
+        (loan) => loan.member_name,
+        (loan) => loan.copy_id,
+        (loan) => `${loan.book_title} (${loan.book_author})`,
+        (loan) => loan.branch_name,
+        (loan) => formatDate(loan.borrowed_at),
+        (loan) => formatDate(loan.due_at),
+        (loan) => loan.status,
+      ],
+      "No borrowed copies found."
+    );
+  } catch (error) {
+    loansTableBody.innerHTML = `<tr><td colspan="8">${error.message}</td></tr>`;
+  }
+}
+
+async function loadFines() {
+  try {
+    const fines = await fetchJSON(`${API_BASE}/fines`);
+    renderSimpleTableRows(
+      finesTableBody,
+      fines,
+      [
+        (fine) => fine.id,
+        (fine) => fine.member_name,
+        (fine) => fine.book_title,
+        (fine) => fine.branch_name,
+        (fine) => `$${fine.amount}`,
+        (fine) => fine.reason,
+        (fine) => (fine.paid ? "Yes" : "No"),
+      ],
+      "No fines found."
+    );
+  } catch (error) {
+    finesTableBody.innerHTML = `<tr><td colspan="7">${error.message}</td></tr>`;
   }
 }
 
@@ -511,13 +620,17 @@ addMemberForm.addEventListener("submit", async (e) => {
   };
 
   try {
-    await fetchJSON(`${API_BASE}/members`, {
+    const member = await fetchJSON(`${API_BASE}/members`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
 
-    setMessage(addMemberOutput, "Member added successfully.", "success");
+    setMessage(
+      addMemberOutput,
+      `${member.first_name} ${member.last_name} was added as a regular member, not staff.`,
+      "success"
+    );
     addMemberForm.reset();
   } catch (error) {
     setMessage(addMemberOutput, error.message, "error");
@@ -553,14 +666,22 @@ loadBooksBtn.addEventListener("click", loadBooks);
 loadBranchBooksBtn.addEventListener("click", loadBooksByBranch);
 loadBranchMembersBtn.addEventListener("click", loadMembersByBranch);
 loadBranchStaffBtn.addEventListener("click", loadStaffByBranch);
+loadLoansBtn.addEventListener("click", loadLoans);
+loadFinesBtn.addEventListener("click", loadFines);
 
 bookPageSize.addEventListener("change", () => {
-  rebuildBookPageNumbers(allBooksCache.length);
-  renderBooksTable();
+  bookPaginationStore.setPageSize(bookPageSize.value);
 });
 
-bookPageNumber.addEventListener("change", renderBooksTable);
+bookPageNumber.addEventListener("change", () => {
+  bookPaginationStore.setPage(bookPageNumber.value);
+});
+
+bookPaginationStore.subscribe(rebuildBookPageNumbers);
+bookPaginationStore.subscribe(renderBooksTable);
 
 updateAuthUI();
 loadBranches();
 loadBooks();
+loadLoans();
+loadFines();

@@ -37,6 +37,14 @@ func NewRouter(db *sql.DB, cfg *config.Config, logger *slog.Logger) http.Handler
 	memberService := service.NewMemberService(memberRepo)
 	memberHandler := handler.NewMemberHandler(memberService)
 
+	loanRepo := repository.NewLoanRepository(db)
+	loanService := service.NewLoanService(loanRepo)
+	loanHandler := handler.NewLoanHandler(loanService)
+
+	fineRepo := repository.NewFineRepository(db)
+	fineService := service.NewFineService(fineRepo)
+	fineHandler := handler.NewFineHandler(fineService)
+
 	accountRepo := repository.NewAccountRepository(db)
 	staffRepo := repository.NewStaffUserRepository(db)
 	staffUserService := service.NewStaffUserService(staffRepo)
@@ -83,6 +91,8 @@ func NewRouter(db *sql.DB, cfg *config.Config, logger *slog.Logger) http.Handler
 	mux.Handle("/book-copies", protectedCopies)
 
 	mux.HandleFunc("/members", memberHandler.HandleMembers)
+	mux.HandleFunc("/loans", loanHandler.HandleLoans)
+	mux.HandleFunc("/fines", fineHandler.HandleFines)
 
 	protectedMembersByID := middleware.Auth(cfg.JWTSecret)(
 		middleware.RequireRole("admin")(http.HandlerFunc(memberHandler.HandleMemberByID)),

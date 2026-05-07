@@ -22,6 +22,7 @@
         <a href="#book-management">Book Management</a>
         <a href="#member-management">Member Management</a>
         <a href="#reports-management">Reports & Availability</a>
+        <a href="#loan-fine-management">Loans & Fines</a>
       </nav>
 
       <div class="current-user-box">
@@ -174,6 +175,7 @@
         <form id="addMemberForm">
           <input type="text" id="memberFirstName" placeholder="First Name" required />
           <input type="text" id="memberLastName" placeholder="Last Name" required />
+          <input type="text" value="Regular Member" disabled />
           <input type="email" id="memberEmail" placeholder="Email" />
           <input type="text" id="memberPhone" placeholder="Phone" />
           <select id="memberBranchId">
@@ -234,6 +236,7 @@
                   <tr>
                     <th>ID</th>
                     <th>Name</th>
+                    <th>Type</th>
                     <th>Email</th>
                     <th>Phone</th>
                   </tr>
@@ -257,11 +260,68 @@
                   <tr>
                     <th>ID</th>
                     <th>Name</th>
+                    <th>Type</th>
+                    <th>Role</th>
                     <th>Position</th>
                     <th>Account ID</th>
                   </tr>
                 </thead>
                 <tbody id="branchStaffTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card" id="loan-fine-management">
+        <h2>Loans & Fines</h2>
+
+        <div class="report-grid">
+          <div class="report-box">
+            <div class="panel-header">
+              <h3>Borrowed Copies</h3>
+              <button id="loadLoansBtn">Refresh Loans</button>
+            </div>
+
+            <div class="table-wrapper">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Loan ID</th>
+                    <th>Member</th>
+                    <th>Copy</th>
+                    <th>Book</th>
+                    <th>Branch</th>
+                    <th>Borrowed</th>
+                    <th>Due</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="loansTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="report-box">
+            <div class="panel-header">
+              <h3>Fines</h3>
+              <button id="loadFinesBtn">Refresh Fines</button>
+            </div>
+
+            <div class="table-wrapper">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Fine ID</th>
+                    <th>Member</th>
+                    <th>Book</th>
+                    <th>Branch</th>
+                    <th>Amount</th>
+                    <th>Reason</th>
+                    <th>Paid</th>
+                  </tr>
+                </thead>
+                <tbody id="finesTableBody"></tbody>
               </table>
             </div>
           </div>

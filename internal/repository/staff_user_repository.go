@@ -77,10 +77,11 @@ func (r *StaffUserRepository) GetAuthUserByAccountID(ctx context.Context, accoun
 
 func (r *StaffUserRepository) GetByBranch(ctx context.Context, branchID int) ([]models.StaffUser, error) {
 	query := `
-		SELECT id, account_id, first_name, last_name, position, branch_id, created_at
-		FROM staff_users
-		WHERE branch_id = $1
-		ORDER BY id ASC
+		SELECT s.id, s.account_id, a.role, s.first_name, s.last_name, s.position, s.branch_id, s.created_at
+		FROM staff_users s
+		JOIN accounts a ON a.id = s.account_id
+		WHERE s.branch_id = $1
+		ORDER BY s.id ASC
 	`
 
 	rows, err := r.DB.QueryContext(ctx, query, branchID)
@@ -96,6 +97,7 @@ func (r *StaffUserRepository) GetByBranch(ctx context.Context, branchID int) ([]
 		if err := rows.Scan(
 			&s.ID,
 			&s.AccountID,
+			&s.Role,
 			&s.FirstName,
 			&s.LastName,
 			&s.Position,

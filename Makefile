@@ -55,7 +55,7 @@ fresh: reset-db
 # DEMO COMMANDS
 # =========================
 
-.PHONY: frontend health branches cors uncompressed compressed compressed-view ratelimit metrics
+.PHONY: frontend health branches loans fines cors uncompressed compressed compressed-view ratelimit metrics
 frontend:
 	python3 -m http.server 5500 --directory frontend
 
@@ -64,6 +64,12 @@ health:
 
 branches:
 	curl -s http://localhost:8080/branches | jq
+
+loans:
+	curl -s http://localhost:8080/loans | jq
+
+fines:
+	curl -s http://localhost:8080/fines | jq
 
 cors:
 	curl -i -X OPTIONS http://localhost:8080/branches \
@@ -107,6 +113,12 @@ members-db:
 copies-db:
 	psql "postgres://postgres:test1Access@localhost:5432/library-test1" -c "SELECT * FROM book_copies;"
 
+loans-db:
+	psql "postgres://postgres:test1Access@localhost:5432/library-test1" -c "SELECT l.id AS loan_id, m.first_name || ' ' || m.last_name AS member, bc.id AS copy_id, b.title AS book, br.name AS branch, l.borrowed_at, l.due_at, l.returned_at, l.status FROM loans l JOIN members m ON l.member_id = m.id JOIN book_copies bc ON l.book_copy_id = bc.id JOIN books b ON bc.book_id = b.id JOIN branches br ON bc.branch_id = br.id ORDER BY l.id;"
+
+fines-db:
+	psql "postgres://postgres:test1Access@localhost:5432/library-test1" -c "SELECT f.id AS fine_id, l.id AS loan_id, m.first_name || ' ' || m.last_name AS member, b.title AS book, br.name AS branch, f.amount, f.reason, f.paid FROM fines f JOIN loans l ON f.loan_id = l.id JOIN members m ON f.member_id = m.id JOIN book_copies bc ON l.book_copy_id = bc.id JOIN books b ON bc.book_id = b.id JOIN branches br ON bc.branch_id = br.id ORDER BY f.id;"
+
 login:
 	curl -s -X POST http://localhost:8080/auth/login \
 	-H "Content-Type: application/json" \
@@ -115,15 +127,7 @@ login:
 register-staff:
 	curl -s -X POST http://localhost:8080/auth/register-staff \
 	-H "Content-Type: application/json" \
-	-d '{ \
-	"email":"2009210050@ub.edu.bz", \
-	"password":"secret123456", \
-	"role":"admin", \
-	"first_name":"New", \
-	"last_name":"Staff", \
-	"position":"Librarian", \
-	"branch_id":1 \
-	}' | jq
+	-d '{"email":"2009210050@ub.edu.bz","password":"secret123456","role":"admin","first_name":"New","last_name":"Staff","position":"Librarian","branch_id":1}' | jq
 
 delete-member-auth:
 	@TOKEN=$$(curl -s -X POST http://localhost:8080/auth/login \

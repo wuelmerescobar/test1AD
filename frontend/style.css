@@ -295,6 +295,25 @@ form {
   background: #f3f8ff;
 }
 
+.type-badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.type-badge.member {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.type-badge.staff {
+  background: #f0fdf4;
+  color: #166534;
+}
+
 .message-box {
   margin-top: 12px;
   padding: 12px;
