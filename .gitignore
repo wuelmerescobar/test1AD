@@ -16,5 +16,8 @@ bin/
 # VSCode
 .vscode/
 
+# Codex
+.codex
+
 # Node
 node_modules/
