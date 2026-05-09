@@ -97,13 +97,20 @@
               <option value="10">10</option>
             </select>
 
-            <label for="bookPageNumber">Page:</label>
-            <select id="bookPageNumber">
-              <option value="1">1</option>
-            </select>
-
             <button id="loadBooksBtn">Refresh Books</button>
           </div>
+        </div>
+
+        <div class="pagination-controls" aria-label="Books pagination top">
+          <button type="button" data-book-page-action="previous">Previous</button>
+          <label>
+            Page
+            <select data-book-page-number>
+              <option value="1">1</option>
+            </select>
+          </label>
+          <span data-book-page-summary>Page 1 of 1</span>
+          <button type="button" data-book-page-action="next">Next</button>
         </div>
 
         <div class="table-wrapper">
@@ -119,6 +126,18 @@
             </thead>
             <tbody id="booksTableBody"></tbody>
           </table>
+        </div>
+
+        <div class="pagination-controls pagination-controls-bottom" aria-label="Books pagination bottom">
+          <button type="button" data-book-page-action="previous">Previous</button>
+          <label>
+            Page
+            <select data-book-page-number>
+              <option value="1">1</option>
+            </select>
+          </label>
+          <span data-book-page-summary>Page 1 of 1</span>
+          <button type="button" data-book-page-action="next">Next</button>
         </div>
 
         <div class="detail-panel">

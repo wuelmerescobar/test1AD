@@ -65,7 +65,9 @@ const currentUserText = document.getElementById("currentUserText");
 const logoutBtn = document.getElementById("logoutBtn");
 
 const bookPageSize = document.getElementById("bookPageSize");
-const bookPageNumber = document.getElementById("bookPageNumber");
+const bookPageNumberSelects = document.querySelectorAll("[data-book-page-number]");
+const bookPageActionButtons = document.querySelectorAll("[data-book-page-action]");
+const bookPageSummaries = document.querySelectorAll("[data-book-page-summary]");
 const bookSearchInput = document.getElementById("bookSearchInput");
 
 let allBooksCache = [];
@@ -84,12 +86,22 @@ function createBookPaginationStore() {
     return Math.max(1, Math.ceil(state.books.length / state.pageSize));
   }
 
+  function clampPage(page) {
+    const requestedPage = Number(page);
+    if (!Number.isFinite(requestedPage)) {
+      return 1;
+    }
+
+    return Math.max(1, Math.min(requestedPage, getTotalPages()));
+  }
+
   function notify() {
     const snapshot = {
       books: state.books,
       page: state.page,
       pageSize: state.pageSize,
       totalPages: getTotalPages(),
+      totalBooks: state.books.length,
     };
 
     subscribers.forEach((subscriber) => subscriber(snapshot));
@@ -103,6 +115,7 @@ function createBookPaginationStore() {
         page: state.page,
         pageSize: state.pageSize,
         totalPages: getTotalPages(),
+        totalBooks: state.books.length,
       });
 
       return () => subscribers.delete(subscriber);
@@ -118,7 +131,15 @@ function createBookPaginationStore() {
       notify();
     },
     setPage(page) {
-      state.page = Math.min(Number(page), getTotalPages());
+      state.page = clampPage(page);
+      notify();
+    },
+    previousPage() {
+      state.page = Math.max(1, state.page - 1);
+      notify();
+    },
+    nextPage() {
+      state.page = Math.min(getTotalPages(), state.page + 1);
       notify();
     },
     getPagedBooks() {
@@ -216,15 +237,31 @@ function updateAuthUI() {
   }
 }
 
-function rebuildBookPageNumbers({ page, totalPages }) {
-  bookPageNumber.innerHTML = "";
-  for (let i = 1; i <= totalPages; i++) {
-    const option = document.createElement("option");
-    option.value = i;
-    option.textContent = i;
-    option.selected = i === page;
-    bookPageNumber.appendChild(option);
-  }
+function renderBookPaginationControls({ page, totalPages, totalBooks }) {
+  bookPageNumberSelects.forEach((select) => {
+    select.innerHTML = "";
+    select.disabled = totalBooks === 0;
+
+    for (let i = 1; i <= totalPages; i++) {
+      const option = document.createElement("option");
+      option.value = i;
+      option.textContent = i;
+      option.selected = i === page;
+      select.appendChild(option);
+    }
+  });
+
+  bookPageActionButtons.forEach((button) => {
+    const action = button.dataset.bookPageAction;
+    button.disabled =
+      totalBooks === 0 ||
+      (action === "previous" && page === 1) ||
+      (action === "next" && page === totalPages);
+  });
+
+  bookPageSummaries.forEach((summary) => {
+    summary.textContent = totalBooks ? `Page ${page} of ${totalPages}` : "No books";
+  });
 }
 
 function renderBranchDetail(branch) {
@@ -756,13 +793,26 @@ bookPageSize.addEventListener("change", () => {
   bookPaginationStore.setPageSize(bookPageSize.value);
 });
 
-bookPageNumber.addEventListener("change", () => {
-  bookPaginationStore.setPage(bookPageNumber.value);
+bookPageNumberSelects.forEach((select) => {
+  select.addEventListener("change", () => {
+    bookPaginationStore.setPage(select.value);
+  });
+});
+
+bookPageActionButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    if (button.dataset.bookPageAction === "previous") {
+      bookPaginationStore.previousPage();
+      return;
+    }
+
+    bookPaginationStore.nextPage();
+  });
 });
 
 bookSearchInput.addEventListener("input", applyBookSearchFilter);
 
-bookPaginationStore.subscribe(rebuildBookPageNumbers);
+bookPaginationStore.subscribe(renderBookPaginationControls);
 bookPaginationStore.subscribe(renderBooksTable);
 
 updateAuthUI();
